@@ -1,0 +1,37 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'idea'
+apply plugin: 'maven'
+
+group "pl.waw.rubach"
+version "1.0"
+
+jar {
+   // baseName = 'multirenamepicture'
+    manifest {
+        attributes 'Main-Class': 'pl.waw.rubach.MultiRenamePicture'
+    }
+}
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+dependencies {
+    compile("commons-cli:commons-cli:1.2")
+    compile project(":multirenamepicture-core")
+}
+
+task fatJar(type: Jar, dependsOn: jar) {
+    baseName = project.name
+    def deps = configurations.runtime.collect { it.isDirectory() ? it : zipTree(it) }
+    from(deps) {
+        exclude 'META-INF/MANIFEST.MF'
+    }
+    manifest {
+        attributes 'Main-Class': 'pl.waw.rubach.MultiRenamePicture'
+    }
+}
+
+install.dependsOn(fatJar)
