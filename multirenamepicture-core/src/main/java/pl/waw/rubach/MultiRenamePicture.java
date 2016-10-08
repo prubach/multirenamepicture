@@ -32,10 +32,6 @@ public class MultiRenamePicture {
 	private static final String HELP = "h";
 	
 	private static final String DEFAULT_DATE_FORMAT = "yyyyMMdd_HHmmss";
-		
-
-	public MultiRenamePicture() {
-	}
 
 	private static Options buildOptions() {
 		Options options = new Options();
@@ -103,7 +99,7 @@ public class MultiRenamePicture {
 			if (cmd.hasOption(HELP)) {
                 HelpFormatter helpFormatter = new HelpFormatter();
                 helpFormatter.printHelp(160,
-                        "multirename [options]",
+                        "renimages [options]",
                         "Rename pictures using their creation date", options, null
                 );
                 System.exit(0);
@@ -139,7 +135,7 @@ public class MultiRenamePicture {
 			};
 			children = dir.listFiles(filter);
 			if (children==null || children.length==0)
-				System.out.println("No files found to rename!");
+				System.out.println("No files found to rename! For help run: \"renimages --help\"");
 			if (children != null) {
 				for (int i = 0; i < children.length; i++) {
 					File picture = children[i];
