@@ -16,6 +16,7 @@
  */
 package pl.waw.rubach;
 
+import java.awt.*;
 import java.io.*;
 
 import java.text.SimpleDateFormat;
@@ -27,6 +28,8 @@ import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import org.apache.commons.cli.*;
+
+import javax.swing.*;
 
 public class MultiRenamePicture {
 	private static final String TEST = "y";
@@ -84,6 +87,69 @@ public class MultiRenamePicture {
 		return options;
 	}
 
+	public static void runRename(File dir, String dateFormat, Long dateDiff, boolean isUndo, boolean isTest, JTextArea outTA) throws IOException {
+			File children[] = dir.listFiles();
+			FilenameFilter filter = new FilenameFilter() {
+
+				public boolean accept(File dir, String name) {
+					return (name.endsWith(".jpg") || name.endsWith(".JPG"));
+				}
+			};
+			children = dir.listFiles(filter);
+			if (children==null || children.length==0)
+				System.out.println("No files found to rename! For help run: \"renimages --help\"");
+			if (children != null) {
+				for (int i = 0; i < children.length; i++) {
+					File picture = children[i];
+					Date when = null;
+					Long origTimeStamp = null;
+					try {
+						Metadata metadata = ImageMetadataReader.readMetadata(picture);
+						// obtain the Exif directory
+						ExifSubIFDDirectory directory
+								= metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
+						// query the tag's value
+						origTimeStamp
+								= directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL).getTime();
+					} catch (IOException | ImageProcessingException ie) {
+						if (outTA!=null) outTA.append("Problem reading EXIF for file: " + picture.getAbsolutePath() + "\n");
+						origTimeStamp = picture.lastModified();
+					}
+					when = new Date(origTimeStamp + dateDiff*1000);
+					SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+					sdf.setTimeZone(TimeZone.getDefault());
+					String display = sdf.format(when);
+
+					StringBuilder output = new StringBuilder();
+					output
+							.append(isTest ? "It would rename: " : "Renaming: ")
+							.append(children[i].getName())
+							.append(" to: ")
+							.append(dir.getCanonicalPath())
+							.append(File.separatorChar);
+
+					String newName = new StringBuilder()
+							.append(display)
+							.append("_")
+							.append(children[i].getName()).toString();
+					if (isUndo)
+						newName = children[i].getName().replace(display+"_", "");
+
+					output.append(newName);
+
+					if (outTA!=null) outTA.append(output.toString()+"\n");
+					else System.out.println(output.toString());
+					if (!isTest) {
+						children[i].renameTo(
+								new File(
+										(new StringBuilder(String.valueOf(dir.getCanonicalPath())))
+												.append(File.separatorChar).append(newName).toString()));
+					}
+				}
+			}
+	}
+
+
 	public static void main(String args[]) {
 		try {
 			Options options = buildOptions();
@@ -130,68 +196,33 @@ public class MultiRenamePicture {
 			if (cmd.hasOption(DATE_DIFF)) {
 				dateDiff = Long.parseLong(cmd.getOptionValue(DATE_DIFF));
 			}
-			
-			File children[] = dir.listFiles();
-			FilenameFilter filter = new FilenameFilter() {
 
-				public boolean accept(File dir, String name) {
-					return (name.endsWith(".jpg") || name.endsWith(".JPG"));
+			if (cmd.getOptions().length==0) {
+				try {
+					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+				} catch (UnsupportedLookAndFeelException ue) {
+				} catch (IllegalAccessException e) {
+				} catch (InstantiationException e) {
+				} catch (ClassNotFoundException e) {
 				}
-			};
-			children = dir.listFiles(filter);
-			if (children==null || children.length==0)
-				System.out.println("No files found to rename! For help run: \"renimages --help\"");
-			if (children != null) {
-				for (int i = 0; i < children.length; i++) {
-					File picture = children[i];
-					Date when = null;
+				JFrame frame = new JFrame("RenameImages");
+				RenameImages renameImages = new RenameImages();
+				renameImages.init();
+				frame.setContentPane(renameImages.getPanel1());
+				frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+				frame.pack();
+				frame.setVisible(true);
+			} else {
 
-					Metadata metadata = ImageMetadataReader.readMetadata(picture);
-					// obtain the Exif directory
-					ExifSubIFDDirectory directory
-							= metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
-					// query the tag's value
-					Date date
-							= directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
-
-					when = new Date(date.getTime() + dateDiff*1000);
-					SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
-					sdf.setTimeZone(TimeZone.getDefault());
-					String display = sdf.format(when);
-					
-					StringBuilder output = new StringBuilder();
-					output
-						.append(onlyTest ? "It would rename: " : "Renaming: ")
-						.append(children[i].getName())
-						.append(" to: ");
-					if (cmd.hasOption(FOLDER))
-						output 	
-							.append(dir.getCanonicalPath())
-							.append(File.separatorChar);
-					
-					String newName = new StringBuilder()
-							.append(display)
-							.append("_")
-							.append(children[i].getName()).toString();
-					if (undo)
-						newName = children[i].getName().replace(display+"_", "");							
-					
-					output.append(newName);
-					System.out.println(output.toString());
-					if (!onlyTest) {
-							children[i].renameTo(
-									new File(
-											(new StringBuilder(String.valueOf(dir.getCanonicalPath())))
-												.append(File.separatorChar).append(newName).toString()));
-					}
+				try {
+					runRename(dir, dateFormat, dateDiff, undo, onlyTest, null);
+				} catch (IOException e) {
+					System.out.println("Caught error while trying to rename: " + e.getMessage());
 				}
 			}
+
 		} catch (ParseException pe) {
 			System.out.println("Command not parsed correctly");
-		} catch (IOException e) {
-			System.out.println("Caught error while trying to rename: " + e.getMessage());
-		} catch (ImageProcessingException e) {
-			System.out.println("Caught error while trying to rename: " + e.getMessage());
 		}
 
 	}

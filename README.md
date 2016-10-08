@@ -1,6 +1,6 @@
-## Multi Rename Picture
+## Multi Rename Images
 
-Multi Rename Picture is a tool that allows users to rename pictures adding the creation/modification date as the
+Multi Rename Images is a tool that allows users to rename pictures adding the creation/modification date as the
 first part of it's name.
 
 
@@ -15,6 +15,14 @@ gradle install
 #### Run
 
 To run simply execute the resulting jar file that will be placed in "build/libs"
+
+There is a GUI and a Console mode. For GUI simply double click the JAR file or run:
+
+~~~
+java -jar build/libs/multirenamepicture-1.0.jar
+~~~
+
+For Console mode run:
 
 ~~~
 pol@Yoga:~/$ java -jar build/libs/multirenamepicture-1.0.jar -h
