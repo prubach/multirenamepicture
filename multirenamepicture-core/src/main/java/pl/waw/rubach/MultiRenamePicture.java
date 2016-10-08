@@ -21,6 +21,11 @@ import java.io.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
+
+import com.drew.imaging.ImageMetadataReader;
+import com.drew.imaging.ImageProcessingException;
+import com.drew.metadata.Metadata;
+import com.drew.metadata.exif.ExifSubIFDDirectory;
 import org.apache.commons.cli.*;
 
 public class MultiRenamePicture {
@@ -140,7 +145,16 @@ public class MultiRenamePicture {
 				for (int i = 0; i < children.length; i++) {
 					File picture = children[i];
 					Date when = null;
-					when = new Date(picture.lastModified() + dateDiff*1000);
+
+					Metadata metadata = ImageMetadataReader.readMetadata(picture);
+					// obtain the Exif directory
+					ExifSubIFDDirectory directory
+							= metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
+					// query the tag's value
+					Date date
+							= directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
+
+					when = new Date(date.getTime() + dateDiff*1000);
 					SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
 					sdf.setTimeZone(TimeZone.getDefault());
 					String display = sdf.format(when);
@@ -176,7 +190,8 @@ public class MultiRenamePicture {
 			System.out.println("Command not parsed correctly");
 		} catch (IOException e) {
 			System.out.println("Caught error while trying to rename: " + e.getMessage());
-			//e.printStackTrace();
+		} catch (ImageProcessingException e) {
+			System.out.println("Caught error while trying to rename: " + e.getMessage());
 		}
 
 	}
