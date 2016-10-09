@@ -27,6 +27,7 @@ import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
+import com.drew.metadata.file.FileMetadataDirectory;
 import org.apache.commons.cli.*;
 
 import javax.swing.*;
@@ -108,9 +109,14 @@ public class MultiRenamePicture {
 						// obtain the Exif directory
 						ExifSubIFDDirectory directory
 								= metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
-						// query the tag's value
-						origTimeStamp
-								= directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL).getTime();
+						if (directory!=null) {// query the tag's value
+							origTimeStamp
+									= directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL).getTime();
+						} else {
+							FileMetadataDirectory fileMetadataDirectory = metadata.getFirstDirectoryOfType(FileMetadataDirectory.class);
+							if (fileMetadataDirectory!=null) origTimeStamp = fileMetadataDirectory.getDate(FileMetadataDirectory.TAG_FILE_MODIFIED_DATE).getTime();
+							else throw new IOException();
+						}
 					} catch (IOException | ImageProcessingException ie) {
 						if (outTA!=null) outTA.append("Problem reading EXIF for file: " + picture.getAbsolutePath() + "\n");
 						origTimeStamp = picture.lastModified();
