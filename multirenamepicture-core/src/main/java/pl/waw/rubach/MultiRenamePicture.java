@@ -109,7 +109,7 @@ public class MultiRenamePicture {
 						// obtain the Exif directory
 						ExifSubIFDDirectory directory
 								= metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
-						if (directory!=null) {// query the tag's value
+						if (directory!=null && directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)!=null) {// query the tag's value
 							origTimeStamp
 									= directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL).getTime();
 						} else {
