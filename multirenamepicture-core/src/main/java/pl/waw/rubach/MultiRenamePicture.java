@@ -26,6 +26,7 @@ import java.util.TimeZone;
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Metadata;
+import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
 import com.drew.metadata.file.FileMetadataDirectory;
 import org.apache.commons.cli.*;
@@ -39,6 +40,7 @@ public class MultiRenamePicture {
 	private static final String DATE_DIFF = "m";
 	private static final String FOLDER = "d";
 	private static final String HELP = "h";
+	private static final String CAMERA = "c";
 	
 	private static final String DEFAULT_DATE_FORMAT = "yyyyMMdd_HHmmss";
 
@@ -53,6 +55,11 @@ public class MultiRenamePicture {
 		undo.setType(Boolean.class);
 		undo.setArgName(UNDO);
 		options.addOption(undo);
+
+		Option camera = new Option(CAMERA, "camera", false, "Add camera name to file name");
+		camera.setType(Boolean.class);
+		camera.setArgName(CAMERA);
+		options.addOption(camera);
 
 		Option dir = new Option(FOLDER, "dir", true,
 				"Directory where images are located");
@@ -88,7 +95,7 @@ public class MultiRenamePicture {
 		return options;
 	}
 
-	public static void runRename(File dir, String dateFormat, Long dateDiff, boolean isUndo, boolean isTest, JTextArea outTA) throws IOException {
+	public static void runRename(File dir, String dateFormat, Long dateDiff, boolean isUndo, boolean isTest, boolean cameraName, JTextArea outTA) throws IOException {
 			File children[] = dir.listFiles();
 			FilenameFilter filter = new FilenameFilter() {
 
@@ -104,11 +111,30 @@ public class MultiRenamePicture {
 					File picture = children[i];
 					Date when = null;
 					Long origTimeStamp = null;
+					String prefixName = null;
+					String newName = null;
 					try {
 						Metadata metadata = ImageMetadataReader.readMetadata(picture);
 						// obtain the Exif directory
 						ExifSubIFDDirectory directory
 								= metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
+						if (cameraName) {
+							if (directory != null) {
+								if ((directory.getString(ExifSubIFDDirectory.TAG_MAKE)!=null) && (directory.getString(ExifSubIFDDirectory.TAG_MODEL)!=null)) {
+									prefixName = directory.getString(ExifSubIFDDirectory.TAG_MAKE).trim()
+											+ "_" + directory.getString(ExifSubIFDDirectory.TAG_MODEL).trim()
+											+ "_";
+								} else {
+									ExifIFD0Directory dir0
+											= metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
+									prefixName = (dir0.getString(ExifIFD0Directory.TAG_MODEL)!=null ? dir0.getString(ExifIFD0Directory.TAG_MODEL).trim() : "UNKNOWN") + "_";
+								}
+								newName = prefixName + children[i].getName();
+							}
+							else {
+								continue;
+							}
+						}
 						if (directory!=null && directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)!=null) {// query the tag's value
 							origTimeStamp
 									= directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL).getTime();
@@ -134,12 +160,15 @@ public class MultiRenamePicture {
 							.append(dir.getCanonicalPath())
 							.append(File.separatorChar);
 
-					String newName = new StringBuilder()
+					if (newName==null)
+						newName = new StringBuilder()
 							.append(display)
 							.append("_")
 							.append(children[i].getName()).toString();
-					if (isUndo)
+					if (isUndo && !cameraName)
 						newName = children[i].getName().replace(display+"_", "");
+					else if (isUndo && cameraName)
+						newName = children[i].getName().replace(prefixName, "");
 
 					output.append(newName);
 
@@ -165,6 +194,7 @@ public class MultiRenamePicture {
 			String dateFormat = DEFAULT_DATE_FORMAT;
 			Boolean onlyTest = true;
 			Boolean undo = false;
+			Boolean cameraName = false;
 			File dir = new File("");
 			Long dateDiff = 0L;
 			
@@ -195,6 +225,10 @@ public class MultiRenamePicture {
 				//System.out.println("got undo");
 				undo = true;
 			}
+			if (cmd.hasOption(CAMERA)) {
+				//System.out.println("got undo");
+				cameraName = true;
+			}
 			if (cmd.hasOption(FOLDER)) {
 				//System.out.println("got: " + cmd.getOptionValue(FOLDER));
 				dir = new File(cmd.getOptionValue(FOLDER));	          
@@ -221,7 +255,7 @@ public class MultiRenamePicture {
 			} else {
 
 				try {
-					runRename(dir, dateFormat, dateDiff, undo, onlyTest, null);
+					runRename(dir, dateFormat, dateDiff, undo, onlyTest, cameraName, null);
 				} catch (IOException e) {
 					System.out.println("Caught error while trying to rename: " + e.getMessage());
 				}
