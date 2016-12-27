@@ -156,9 +156,11 @@ public class MultiRenamePicture {
 					output
 							.append(isTest ? "It would rename: " : "Renaming: ")
 							.append(children[i].getName())
-							.append(" to: ")
-							.append(dir.getCanonicalPath())
-							.append(File.separatorChar);
+							.append(" date: ")
+							.append(display)
+							.append(" to: ");
+							//.append(dir.getCanonicalPath())
+							//.append(File.separatorChar);
 
 					if (newName==null)
 						newName = new StringBuilder()
