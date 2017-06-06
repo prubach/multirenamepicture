@@ -14,5 +14,8 @@
 hs_err_pid*
 
 .idea
+.idea/*
 .gradle
 *.iml
+build/
+multirenamepicture-core/build/
