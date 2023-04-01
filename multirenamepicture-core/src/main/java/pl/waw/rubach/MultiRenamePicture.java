@@ -16,7 +16,6 @@
  */
 package pl.waw.rubach;
 
-import java.awt.*;
 import java.io.*;
 
 import java.text.SimpleDateFormat;
@@ -28,7 +27,8 @@ import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifIFD0Directory;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
-import com.drew.metadata.file.FileMetadataDirectory;
+import com.drew.metadata.file.FileSystemDirectory;
+import com.drew.metadata.mp4.Mp4Directory;
 import org.apache.commons.cli.*;
 
 import javax.swing.*;
@@ -100,7 +100,7 @@ public class MultiRenamePicture {
 			FilenameFilter filter = new FilenameFilter() {
 
 				public boolean accept(File dir, String name) {
-					return (name.endsWith(".jpg") || name.endsWith(".JPG"));
+					return (name.endsWith(".jpg") || name.endsWith(".JPG") || name.endsWith(".mp4") || name.endsWith(".MP4"));
 				}
 			};
 			children = dir.listFiles(filter);
@@ -118,6 +118,8 @@ public class MultiRenamePicture {
 						// obtain the Exif directory
 						ExifSubIFDDirectory directory
 								= metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
+						Mp4Directory mp4Directory
+								= metadata.getFirstDirectoryOfType(Mp4Directory.class);
 						if (cameraName) {
 							if (directory != null) {
 								if ((directory.getString(ExifSubIFDDirectory.TAG_MAKE)!=null) && (directory.getString(ExifSubIFDDirectory.TAG_MODEL)!=null)) {
@@ -138,9 +140,12 @@ public class MultiRenamePicture {
 						if (directory!=null && directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL)!=null) {// query the tag's value
 							origTimeStamp
 									= directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL).getTime();
+						} else if (mp4Directory!=null) {
+							origTimeStamp
+									= mp4Directory.getDate(Mp4Directory.TAG_CREATION_TIME).getTime();
 						} else {
-							FileMetadataDirectory fileMetadataDirectory = metadata.getFirstDirectoryOfType(FileMetadataDirectory.class);
-							if (fileMetadataDirectory!=null) origTimeStamp = fileMetadataDirectory.getDate(FileMetadataDirectory.TAG_FILE_MODIFIED_DATE).getTime();
+							FileSystemDirectory fsdir = metadata.getFirstDirectoryOfType(FileSystemDirectory.class);
+							if (fsdir!=null) origTimeStamp = fsdir.getDate(FileSystemDirectory.TAG_FILE_MODIFIED_DATE).getTime();
 							else throw new IOException();
 						}
 					} catch (IOException | ImageProcessingException ie) {
@@ -242,10 +247,8 @@ public class MultiRenamePicture {
 			if (cmd.getOptions().length==0) {
 				try {
 					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-				} catch (UnsupportedLookAndFeelException ue) {
-				} catch (IllegalAccessException e) {
-				} catch (InstantiationException e) {
-				} catch (ClassNotFoundException e) {
+				} catch (UnsupportedLookAndFeelException | IllegalAccessException | InstantiationException |
+						 ClassNotFoundException ue) {
 				}
 				JFrame frame = new JFrame("RenameImages");
 				RenameImages renameImages = new RenameImages();

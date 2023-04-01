@@ -17,12 +17,13 @@ jar {
     }
 }
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 dependencies {
     implementation("commons-cli:commons-cli:1.2")
     // https://mvnrepository.com/artifact/com.drewnoakes/metadata-extractor
-    implementation group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.10.1'
+    implementation group: 'com.drewnoakes', name: 'metadata-extractor', version: '2.18.0'
+    implementation group: 'org.apache.tika', name: 'tika-parsers', version: '2.7.0', ext: 'pom'
     implementation 'com.intellij:forms_rt:7.0.3'
 }
