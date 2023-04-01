@@ -9,7 +9,7 @@ first part of it's name.
 To build please use Gradle:
 
 ~~~
-gradle install
+gradle build
 ~~~
 
 #### Run
@@ -19,7 +19,7 @@ To run simply execute the resulting jar file that will be placed in "build/libs"
 There is a GUI and a Console mode. For GUI simply double click the JAR file or run:
 
 ~~~
-java -jar build/libs/multirenamepicture-1.0.jar
+java -jar build/libs/multirenamepicture-1.5.jar
 ~~~
 
 For Console mode run:
